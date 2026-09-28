@@ -1,69 +1,61 @@
 import { useState } from 'react';
 import { db } from './firebaseConnection';
-import { doc, setDoc, collection, addDoc, getDoc } from 'firebase/firestore'
+import { doc, setDoc, collection, addDoc, getDoc, getDocs, updateDoc } from 'firebase/firestore'
 
 function App() {
   const [titulo, setTitulo] = useState('');
   const [autor, setAutor] = useState('');
+  const [idPost, setIdPost] = useState('');
 
-  // async function handleAdd(){
-  //   await setDoc(doc(db, "posts", "12345"), {
-  //     titulo: titulo,
-  //     autor: autor,
-  //   })
-  //   .then(() =>{
-  //     console.log("DADOS REGISTRADOS")
-  //   })
-  //   .catch((error) => {
-  //     console.log("GEROU ERRO" + error)
-  //   })
-  // }
-
-//   async function handleAdd() {
-//   try {
-//     await setDoc(doc(db, "posts", "12345"), {
-//       titulo,
-//       autor,
-//     })
-
-//     console.log("DADOS REGISTRADOS NO BANCO!")
-//   } catch (error) {
-//     console.log("GEROU ERRO", error)
-//   }
-// }
+  const [posts, setPosts] = useState([]);
 
   async function handleAdd() {
-  try {
-    await addDoc(collection(db, "posts"), {
-      titulo,
-      autor,
-    })
-    console.log("DADOS REGISTRADOS NO BANCO!")
-    setAutor('');
-    setTitulo('')
+    try {
+      await addDoc(collection(db, "posts"), {
+        titulo,
+        autor,
+      })
+      console.log("DADOS REGISTRADOS NO BANCO!")
+      setAutor('');
+      setTitulo('')
 
-  } catch (error) {
-    console.log("GEROU ERRO", error)
-  }
-}
-
-async function buscarPost() {
-  try {
-    const postRef = doc(db, "posts", "12345")
-
-    const snapshot = await getDoc(postRef)
-
-    if (snapshot.exists()) {
-      setAutor(snapshot.data().autor)
-      setTitulo(snapshot.data().titulo)
-    } else {
-      console.log("Post não encontrado")
+    } catch (error) {
+      console.log("GEROU ERRO", error)
     }
-
-  } catch (error) {
-    console.log("ERRO AO BUSCAR", error)
   }
-}
+
+  async function buscarPosts() {
+    try {
+      const postRef = collection(db, "posts");
+
+      const snapshot = await getDocs(postRef);
+
+      const lista = [];
+
+      snapshot.forEach((doc) => {
+        lista.push({
+          id: doc.id,
+          titulo: doc.data().titulo,
+          autor: doc.data().autor,
+        });
+      });
+
+      setPosts(lista);
+
+    } catch (error) {
+      console.log("ERRO AO BUSCAR", error);
+    }
+  }
+
+  async function editarPost() {
+    try {
+      const docRef = doc(db, "posts", idPost)
+      
+      
+    } catch (error) {
+
+    }
+  }
 
   return (
 
@@ -74,6 +66,14 @@ async function buscarPost() {
       </h1>
 
       <div className='w-[600px] flex flex-col'>
+
+        <label>ID do Post:</label>
+        <input 
+          placeholder='Digite o ID do post'
+          value={idPost}
+          onChange={ (e) => setIdPost(e.target.value) }
+        /> <br/>
+
         <label>
           Título:
         </label>
@@ -95,9 +95,25 @@ async function buscarPost() {
         <button onClick={handleAdd}>
           Cadastrar
         </button>
-        <button onClick={buscarPost}>
+        <button onClick={buscarPosts}>
           Buscar post
         </button>
+        <button onClick={editarPost}>
+          Atualizar
+        </button>
+
+        <ul>
+          {posts.map((post) => {
+            return(
+              <li key={post.id}>
+                <strong>ID: {post.id}</strong> <br/>
+                <span>Título: {post.titulo}</span> <br/>
+                <span>Autor: {post.autor}</span> <br/>
+              </li>
+            )
+          })}
+        </ul>
+
       </div>
 
 
