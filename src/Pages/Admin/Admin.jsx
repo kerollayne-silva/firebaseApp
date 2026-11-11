@@ -1,18 +1,106 @@
-import { useState } from "react";
-import { auth } from "../../firebaseConnection";
+import { useState, useEffect } from "react";
+import { auth, db } from "../../firebaseConnection";
 import { signOut } from "firebase/auth";
+
+import { addDoc, collection, onSnapshot, query, orderBy, where, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 
 function Admin() {
   const [task, setTask] = useState('');
+  const [user, setUser] = useState({});
+  const [edit, setEdit] = useState({});
 
-  function handleRegister(e) {
+  const [tasks, setTasks] = useState([]);
+
+  useEffect(() => {
+    let unsub;
+
+    async function loadTasks() {
+      const userDetail = localStorage.getItem("@detailUser");
+      setUser(JSON.parse(userDetail));
+
+      if(userDetail){
+        const data = JSON.parse(userDetail);
+
+        const taskRef = collection(db, "tasks")
+        const q = query(taskRef, orderBy("created", "desc"), where("userUid", "==", data?.uid));
+        unsub = onSnapshot(q, (snapshot) => {
+          let lista = [];
+
+          snapshot.forEach((doc) => {
+            lista.push({
+              id: doc.id,
+              tarefa: doc.data().tarefa,
+              created: doc.data().created,
+              userUid: doc.data().userUid
+            })
+          })
+          setTasks(lista);
+
+        })
+      }
+    }
+
+    loadTasks();
+
+    return () => unsub?.();
+  }, []);
+
+  async function handleRegister(e) {
     e.preventDefault();
 
-    alert(`Tarefa registrada: ${task}`);
+    if (task === '') {
+      alert('Digite sua tarefa');
+      return;
+    }
+
+    if(edit?.id){
+      handleUpdateTask();
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "tasks"), {
+        tarefa: task,
+        created: new Date(),
+        userUid: user?.uid
+      });
+      console.log("Tarefa registrada com sucesso!");
+
+      setTask('');
+    } catch (error) {
+      console.error("Erro ao registrar tarefa", error);
+    }
   }
 
   async function handleLogout() {
     await signOut(auth);
+  }
+
+  async function deleteTask(id) {
+    const docRef = doc(db, "tasks", id);
+    await deleteDoc(docRef);
+  }
+
+  function editTask(item) {
+    setTask(item.tarefa)
+    setEdit(item)
+  }
+
+  async function handleUpdateTask() {
+    const docRef = doc(db, "tasks", edit?.id);
+    await updateDoc(docRef, {
+      tarefa: task
+    })
+    .then(() => {
+      console.log("Tarefa atualizada com sucesso!");
+      setTask('');
+      setEdit({});
+    })
+    .catch((error) => {
+      console.error("Erro ao atualizar tarefa", error);
+      setTask('');
+      setEdit({});
+    })
   }
 
   return (
@@ -29,22 +117,37 @@ function Admin() {
           onChange={(e) => setTask(e.target.value)}
         />
 
-        <button
+        {Object.keys(edit).length > 0 ? (
+          <button
           className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
-          type="submit">Registrar tarefa
-        </button>
+          type="submit"
+          >Atualizar tarefa
+        </button>) : (
+          <button 
+          className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
+          type="submit" 
+          >Registrar tarefa</button>
+        )}
+
       </form>
 
+      {tasks.map((item) => (
       <article
+        key={item.id}
         className="bg-[#1e2124] p-4 rounded w-1/3 flex flex-col justify-center p-4 gap-2 border border-[#2c2f33]">
         <p className="mb-2">
-          Estudar js e react
+          {item.tarefa}
         </p>
         <div className="flex gap-2">
-          <button className="bg-transparent text-[#ffcc23] px-4 py-2 rounded">Editar</button>
-          <button className="bg-white text-black px-4 py-2 rounded">Concluir</button>
+          <button 
+          onClick={() => editTask(item)}
+          className="bg-transparent text-[#ffcc23] px-4 py-2 rounded">Editar</button>
+          <button 
+          onClick={() => deleteTask(item.id)}
+          className="bg-white text-black px-4 py-2 rounded">Concluir</button>
         </div>
       </article>
+      ))}
 
       <button
         onClick={handleLogout}

@@ -8,27 +8,25 @@ function Private({ children }) {
   const [signed, setSigned] = useState(false);
 
   useEffect(() => {
-    async function checkLogin() {
-      const unsub = onAuthStateChanged(auth, (user) => {
-        if (user) {
-          const userData = {
-            uid: user.uid,
-            email: user.email,
-          }
-
-          localStorage.setItem("@detailUser", JSON.stringify(userData));
-
-          setLoading(false);
-          setSigned(true);
-
-        } else {
-          setLoading(false);
-          setSigned(false);
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userData = {
+          uid: user.uid,
+          email: user.email,
         }
-      })
-    }
-    checkLogin();
-  }, [])
+
+        localStorage.setItem("@detailUser", JSON.stringify(userData));
+
+        setLoading(false);
+        setSigned(true);
+      } else {
+        setLoading(false);
+        setSigned(false);
+      }
+    });
+
+    return () => unsub();
+  }, []);
 
   if (loading) {
     return (
