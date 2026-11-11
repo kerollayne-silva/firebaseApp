@@ -138,6 +138,17 @@ Para rodar o projeto com sua própria base de dados:
 - Persistência do usuário com `localStorage`
 - Estilização com Tailwind CSS (tema escuro)
 
+---
+
+## 📌 Próximos passos
+
+- [ ] Campo concluida (true/false) com toggle Concluir/Refazer
+- [ ] Mover config do Firebase para variáveis de ambiente (.env)
+- [ ] Implementar conclusão/exclusão de tarefa
+- [ ] Deploy na Vercel/Netlify"
+
+---
+
 ## 🎓 Créditos
 
 Projeto de estudos realizado durante o curso:
